@@ -16,11 +16,11 @@ if (appDiv) appDiv.innerHTML = '';
 const layoutInicial = `
   <div class="min-h-screen min-h-dvh flex flex-col w-full bg-gradient-to-br from-blue-100 to-blue-300 dark:from-gray-950 dark:to-gray-900 dark:bg-gray-950">
     <header class="w-full bg-white/80 dark:bg-gray-950/90 shadow-md py-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-      <div class="flex items-center gap-3">
-        <img src="https://veedis.com.br/wp-content/uploads/2025/04/VEEDS.png" alt="Logo Veedis" class="w-12 h-12 object-contain" />
-        <span class="text-2xl font-bold text-blue-900 dark:text-white tracking-tight">Projeto Veedis</span>
+      <div class="flex items-center gap-3 w-full justify-center sm:justify-start">
+        <img src="https://veedis.com.br/wp-content/uploads/2025/04/VEEDS.png" alt="Logo Veedis" class="w-12 h-12 object-contain hidden sm:block" />
+        <span class="text-2xl font-bold text-blue-900 dark:text-white tracking-tight text-center w-full">Projeto Veedis</span>
       </div>
-      <button id="toggle-dark" class="ml-4 p-2 sm:p-2 text-xl sm:text-2xl rounded-full bg-blue-200 dark:bg-gray-700 text-blue-900 dark:text-yellow-300 hover:bg-blue-300 dark:hover:bg-gray-600 transition-colors" title="Alternar modo escuro/claro">🌙</button>
+      <button id="toggle-dark" class="mx-auto sm:ml-4 p-2 sm:p-2 text-xl sm:text-2xl rounded-full bg-blue-200 dark:bg-gray-700 text-blue-900 dark:text-yellow-300 hover:bg-blue-300 dark:hover:bg-gray-600 transition-colors" title="Alternar modo escuro/claro">🌙</button>
     </header>
     <main class="flex-1 flex flex-col items-center justify-center px-0 py-10 w-full max-w-full">
       <h1 class="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold text-blue-900 dark:text-yellow-200 mb-2 sm:mb-4 text-center drop-shadow">Bem-vindo ao Teste</h1>

@@ -18,10 +18,8 @@ export class PlayerDeVideo {
     this.container.appendChild(this.elementoVideo);
     this.criarControles();
 
-    // Autoplay no mobile ao abrir
-    if (window.innerWidth < 640) {
-      this.elementoVideo.play().catch(() => {});
-    }
+    // Autoplay ao abrir (mobile e desktop)
+    this.elementoVideo.play().catch(() => {});
 
     // Sincronizar volume do vídeo com o volume do dispositivo (mobile)
     if (window.innerWidth < 640) {

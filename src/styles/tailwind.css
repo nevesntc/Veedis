@@ -1,0 +1,65 @@
+/* src/styles/tailwind.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Ajustes de responsividade e experiência visual para o vídeo flutuante e modal.
+  Estes utilitários garantem transições suaves, foco visual e adaptação a diferentes tamanhos de tela.
+*/
+
+.video-flutuante {
+  @apply fixed bottom-6 right-6 z-50 bg-white rounded-full shadow-lg p-2 flex items-center cursor-pointer hover:scale-105 transition-transform focus:ring-2 focus:ring-blue-400;
+}
+
+@media (max-width: 640px) {
+  .video-flutuante {
+    @apply bottom-2 right-2 p-1 w-14 h-14;
+  }
+}
+
+.modal-veedis {
+  @apply fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 transition-opacity duration-300;
+}
+
+.conteudo-modal {
+  @apply bg-white rounded-lg p-4 max-w-2xl w-full flex flex-col items-center relative shadow-2xl;
+  min-width: 320px;
+  min-height: 320px;
+  box-sizing: border-box;
+}
+
+#video-area {
+  @apply w-full flex justify-center items-center;
+  min-height: 200px;
+  background: #f3f4f6;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+#video-area video {
+  @apply rounded-lg shadow-lg w-full h-auto max-h-[60vh] outline-none;
+  background: #000;
+}
+
+#video-area:focus-within {
+  @apply ring-2 ring-blue-400;
+}
+
+.botao-controle {
+  @apply text-2xl mx-2 p-2 rounded hover:bg-blue-100 focus:bg-blue-200 transition-colors;
+}
+
+#fechar-modal {
+  @apply absolute top-2 right-2 text-2xl bg-white rounded-full p-1 hover:bg-red-100 focus:bg-red-200 transition-colors;
+}
+
+.story-bolinha {
+  @apply flex items-center justify-center w-20 h-20 rounded-full border-4 border-blue-400 bg-white shadow-lg cursor-pointer hover:scale-105 transition-transform;
+}
+
+@media (max-width: 640px) {
+  .story-bolinha {
+    @apply w-14 h-14;
+  }
+}

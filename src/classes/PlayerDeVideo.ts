@@ -5,6 +5,7 @@ export class PlayerDeVideo {
   private estaEmTelaCheia: boolean = false;
 
   constructor(container: HTMLElement, url: string) {
+    console.log('[PlayerDeVideo] Criando player para:', url);
     this.container = container;
     this.elementoVideo = document.createElement('video');
     this.elementoVideo.src = url;
@@ -17,6 +18,11 @@ export class PlayerDeVideo {
     this.elementoVideo.style.display = 'block';
     this.container.appendChild(this.elementoVideo);
     this.criarControles();
+    // Log de debug para saber quantos vídeos existem no DOM
+    setTimeout(() => {
+      const videos = document.querySelectorAll('video');
+      console.log('[PlayerDeVideo] Total de <video> no DOM:', videos.length);
+    }, 100);
 
     // Autoplay ao abrir (mobile e desktop)
     this.elementoVideo.play().catch(() => {});
@@ -151,7 +157,67 @@ export class PlayerDeVideo {
   }
 
   public destruir() {
-    this.elementoVideo.pause();
-    this.container.innerHTML = '';
+    console.log('[PlayerDeVideo] Destruindo player:', this.elementoVideo?.src);
+    if (this.elementoVideo) {
+      // Remove todos os event listeners conhecidos
+      this.elementoVideo.onplay = null;
+      this.elementoVideo.onpause = null;
+      this.elementoVideo.onvolumechange = null;
+      this.elementoVideo.onended = null;
+      this.elementoVideo.onloadeddata = null;
+      this.elementoVideo.oncanplay = null;
+      this.elementoVideo.oncanplaythrough = null;
+      this.elementoVideo.onerror = null;
+      // Pausa e aguarda 100ms antes de destruir (workaround Chromium)
+      this.elementoVideo.pause();
+      setTimeout(() => {
+        try {
+          this.elementoVideo.src = '';
+          this.elementoVideo.load();
+          if (this.elementoVideo.parentNode) {
+            this.elementoVideo.parentNode.removeChild(this.elementoVideo);
+          }
+          // Pausa e limpa DE NOVO após remover do DOM
+          try {
+            this.elementoVideo.pause();
+            this.elementoVideo.src = '';
+            this.elementoVideo.load();
+          } catch {}
+          // Força GC
+          // @ts-ignore
+          this.elementoVideo = null;
+        } catch (e) {
+          console.warn('[PlayerDeVideo] Erro ao destruir vídeo:', e);
+        }
+        this.container.innerHTML = '';
+        // Log de debug para saber quantos vídeos existem no DOM após destruir
+        setTimeout(() => {
+          const videos = document.querySelectorAll('video');
+          console.log('[PlayerDeVideo] Após destruir, total de <video> no DOM:', videos.length);
+        }, 100);
+      }, 100);
+    }
+  }
+
+  public trocarVideo(url: string) {
+    if (!this.elementoVideo) return;
+    
+    // Fade out
+    this.elementoVideo.style.transition = 'opacity 0.08s ease-out';
+    this.elementoVideo.style.opacity = '0';
+    
+    setTimeout(() => {
+      // Troca o vídeo
+      this.elementoVideo.pause();
+      this.elementoVideo.src = url;
+      this.elementoVideo.load();
+      
+      // Fade in
+      this.elementoVideo.style.transition = 'opacity 0.08s ease-in';
+      this.elementoVideo.style.opacity = '1';
+      
+      // Play
+      this.elementoVideo.play().catch(() => {});
+    }, 80);
   }
 }

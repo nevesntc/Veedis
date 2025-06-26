@@ -2,6 +2,9 @@
 import { GerenciadorDeVideos } from './GerenciadorDeVideos';
 import { PlayerDeVideo } from './PlayerDeVideo';
 import { renderizarLayoutInicial } from '../main';
+import capa1 from '../assets/capas/capa-story-1.jpg';
+import capa2 from '../assets/capas/capa-story-2.jpg';
+import capa3 from '../assets/capas/capa-story-3.jpg';
 
 export class ControladorUI {
   private containerModal: HTMLElement;
@@ -19,12 +22,13 @@ export class ControladorUI {
 
   private criarModal(): HTMLElement {
     const modal = document.createElement('div');
-    modal.className = 'modal-veedis fixed inset-0 z-50 flex items-center justify-center bg-black/80';
+    // Fundo cinza claro uniforme
+    modal.className = 'modal-veedis fixed inset-0 z-50 flex items-center justify-center bg-gray-200';
     modal.innerHTML = `
       <div class="flex items-center gap-4 sm:gap-8 relative">
-        <button id="anterior" class="text-white text-4xl opacity-70 hover:opacity-100 transition-colors absolute left-[-60px] sm:left-[-80px] top-1/2 -translate-y-1/2 z-30 bg-black/40 rounded-full p-2">&#8249;</button>
+        <button id="anterior" class="text-gray-500 text-4xl opacity-70 hover:opacity-100 transition-colors absolute left-[-60px] sm:left-[-80px] top-1/2 -translate-y-1/2 z-30 bg-white/60 rounded-full p-2 shadow-md hidden sm:block">&#8249;</button>
         <div id="carrossel-stories" class="flex gap-4 sm:gap-8 items-center"></div>
-        <button id="proximo" class="text-white text-4xl opacity-70 hover:opacity-100 transition-colors absolute right-[-60px] sm:right-[-80px] top-1/2 -translate-y-1/2 z-30 bg-black/40 rounded-full p-2">&#8250;</button>
+        <button id="proximo" class="text-gray-500 text-4xl opacity-70 hover:opacity-100 transition-colors absolute right-[-60px] sm:right-[-80px] top-1/2 -translate-y-1/2 z-30 bg-white/60 rounded-full p-2 shadow-md hidden sm:block">&#8250;</button>
       </div>
     `;
     return modal;
@@ -32,17 +36,18 @@ export class ControladorUI {
 
   private abrirModal() {
     this.containerModal.classList.remove('hidden');
+    this.instanciarPlayerUnico();
     this.atualizarCarrossel();
     // Navegação
     const btnAnterior = this.containerModal.querySelector('#anterior') as HTMLElement;
     const btnProximo = this.containerModal.querySelector('#proximo') as HTMLElement;
     btnAnterior.onclick = (e) => {
       e.stopPropagation();
-      this.gerenciador.videoAnterior();
+      this.irParaAnterior();
     };
     btnProximo.onclick = (e) => {
       e.stopPropagation();
-      this.gerenciador.proximoVideo();
+      this.irParaProximo();
     };
     // Fechar ao clicar fora
     this.containerModal.onclick = (e) => {
@@ -53,6 +58,11 @@ export class ControladorUI {
   }
 
   private fecharModal() {
+    this.destruirPlayerCentral();
+    // Remove todos os <video> do DOM
+    document.querySelectorAll('video').forEach((v) => {
+      try { v.pause(); v.src = ''; v.load(); if (v.parentNode) v.parentNode.removeChild(v); } catch {}
+    });
     renderizarLayoutInicial();
     // Restaura darkmode conforme preferência do usuário
     if (localStorage.getItem('veedis-dark') === '1') {
@@ -67,49 +77,98 @@ export class ControladorUI {
     carrossel.innerHTML = '';
     const idx = this.gerenciador.getIndiceAtual();
     const videos = this.gerenciador.videos;
-    // Card anterior (loop)
-    const idxAnterior = (idx - 1 + videos.length) % videos.length;
-    carrossel.appendChild(this.criarCardLateral(videos[idxAnterior], 'anterior'));
+    // Card lateral esquerda
+    if (idx > 0) {
+      carrossel.appendChild(this.criarCardLateral(videos[idx - 1]));
+    } else {
+      carrossel.appendChild(this.criarCardVazio());
+    }
     // Card central
-    const cardCentral = document.createElement('div');
-    cardCentral.className = 'w-[90vw] h-[70vh] sm:w-80 sm:h-[500px] rounded-3xl bg-black shadow-xl relative overflow-hidden flex flex-col items-center justify-center';
-
-    // Setas internas no mobile
-    const setaEsq = document.createElement('button');
-    setaEsq.innerHTML = '<svg class="w-8 h-8 text-white drop-shadow-lg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>';
-    setaEsq.className = 'absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 rounded-full p-1 sm:hidden z-20 active:bg-black/70';
-    setaEsq.onclick = (e) => { e.stopPropagation(); this.gerenciador.videoAnterior(); };
-    cardCentral.appendChild(setaEsq);
-
-    const setaDir = document.createElement('button');
-    setaDir.innerHTML = '<svg class="w-8 h-8 text-white drop-shadow-lg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>';
-    setaDir.className = 'absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 rounded-full p-1 sm:hidden z-20 active:bg-black/70';
-    setaDir.onclick = (e) => { e.stopPropagation(); this.gerenciador.proximoVideo(); };
-    cardCentral.appendChild(setaDir);
-
-    // Player de vídeo central
-    if (this.player) this.player.destruir();
-    this.player = new PlayerDeVideo(cardCentral, videos[idx]);
+    let cardCentral = document.createElement('div');
+    cardCentral.className = 'w-[320px] h-[540px] sm:w-80 sm:h-[500px] rounded-3xl bg-white shadow-2xl relative overflow-hidden flex flex-col items-center justify-center transition-all duration-300';
+    cardCentral.id = 'card-central';
     carrossel.appendChild(cardCentral);
-    // Card próximo (loop)
-    const idxProximo = (idx + 1) % videos.length;
-    carrossel.appendChild(this.criarCardLateral(videos[idxProximo], 'proximo'));
+    // Se player já existe, só troca o vídeo
+    if (this.player) {
+      this.player.trocarVideo(videos[idx]);
+      cardCentral.appendChild(this.player['elementoVideo']); // Garante que o video está no card central
+    }
+    // Setas internas no mobile
+    if (idx > 0) {
+      const setaEsq = this.criarSeta('esq', () => this.irParaAnterior());
+      cardCentral.appendChild(setaEsq);
+    }
+    if (idx < videos.length - 1) {
+      const setaDir = this.criarSeta('dir', () => this.irParaProximo());
+      cardCentral.appendChild(setaDir);
+    } else {
+      // No último vídeo, seta direita fecha o modal
+      const setaDir = this.criarSeta('dir', () => this.fecharModal());
+      cardCentral.appendChild(setaDir);
+    }
+    // Card lateral direita
+    if (idx < videos.length - 1) {
+      carrossel.appendChild(this.criarCardLateral(videos[idx + 1]));
+    } else {
+      carrossel.appendChild(this.criarCardVazio());
+    }
   }
 
-  private criarCardLateral(url: string, tipo: 'anterior' | 'proximo'): HTMLElement {
-    // Card lateral com vídeo pausado/mudo
+  private criarPlayerCentral(container: HTMLElement, url: string) {
+    // Não faz mais nada, pois o player é único
+  }
+
+  private destruirPlayerCentral() {
+    if (this.player) {
+      this.player.destruir();
+      this.player = null;
+    }
+    // Limpa o container central se existir
+    const cardCentral = document.getElementById('card-central');
+    if (cardCentral) cardCentral.innerHTML = '';
+  }
+
+  private criarCardLateral(url: string): HTMLElement {
     const card = document.createElement('div');
-    card.className = 'w-28 h-72 sm:w-40 sm:h-[400px] rounded-3xl bg-black/60 shadow-lg scale-90 opacity-60 overflow-hidden flex items-center justify-center';
-    const video = document.createElement('video');
-    video.src = url;
-    video.muted = true;
-    video.playsInline = true;
-    video.loop = true;
-    video.className = 'w-full h-full object-cover';
-    video.autoplay = true;
-    video.controls = false;
-    card.appendChild(video);
+    card.className = 'w-20 h-40 sm:w-40 sm:h-[400px] rounded-3xl bg-white/80 shadow-lg scale-90 opacity-60 overflow-hidden flex items-center justify-center';
+    const img = document.createElement('img');
+    let capa = capa1;
+    if (url.includes('c3abv4sfahyth4dhg1oubn7e')) capa = capa1;
+    else if (url.includes('r3hiqe4x47qzjplbbx52g2wu')) capa = capa2;
+    else if (url.includes('qiota7lukm4bnga1ks3zn91x')) capa = capa3;
+    img.src = capa;
+    img.alt = 'Capa do story';
+    img.className = 'w-full h-full object-cover';
+    card.appendChild(img);
     return card;
+  }
+
+  private criarCardVazio(): HTMLElement {
+    const vazio = document.createElement('div');
+    vazio.className = 'w-20 h-40 sm:w-40 sm:h-[400px] rounded-3xl bg-white/40 opacity-0';
+    return vazio;
+  }
+
+  private criarSeta(tipo: 'esq' | 'dir', onClick: () => void): HTMLElement {
+    const btn = document.createElement('button');
+    btn.innerHTML = tipo === 'esq'
+      ? '<svg class="w-8 h-8 text-gray-600 drop-shadow-lg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>'
+      : '<svg class="w-8 h-8 text-gray-600 drop-shadow-lg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>';
+    btn.className = `absolute ${tipo === 'esq' ? 'left-2' : 'right-2'} top-1/2 -translate-y-1/2 bg-white/60 rounded-full p-1 sm:hidden z-20 active:bg-white/80 shadow-md`;
+    btn.onclick = (e) => { e.stopPropagation(); onClick(); };
+    return btn;
+  }
+
+  private irParaAnterior() {
+    if (this.gerenciador.getIndiceAtual() > 0) {
+      this.gerenciador.setIndiceAtual(this.gerenciador.getIndiceAtual() - 1);
+    }
+  }
+
+  private irParaProximo() {
+    if (this.gerenciador.getIndiceAtual() < this.gerenciador.videos.length - 1) {
+      this.gerenciador.setIndiceAtual(this.gerenciador.getIndiceAtual() + 1);
+    }
   }
 
   private adicionarSwipe() {
@@ -123,10 +182,27 @@ export class ControladorUI {
     area.addEventListener('touchend', (e) => {
       endX = e.changedTouches[0].clientX;
       if (endX - startX > 50) {
-        this.gerenciador.videoAnterior();
+        this.irParaAnterior();
       } else if (startX - endX > 50) {
-        this.gerenciador.proximoVideo();
+        this.irParaProximo();
       }
     });
+  }
+
+  // Cria o player uma única vez
+  private instanciarPlayerUnico() {
+    const idx = this.gerenciador.getIndiceAtual();
+    const videos = this.gerenciador.videos;
+    const carrossel = this.containerModal.querySelector('#carrossel-stories') as HTMLElement;
+    let cardCentral = carrossel?.querySelector('#card-central') as HTMLElement;
+    if (!cardCentral) {
+      cardCentral = document.createElement('div');
+      cardCentral.className = 'w-[320px] h-[540px] sm:w-80 sm:h-[500px] rounded-3xl bg-white shadow-2xl relative overflow-hidden flex flex-col items-center justify-center transition-all duration-300';
+      cardCentral.id = 'card-central';
+      carrossel?.appendChild(cardCentral);
+    }
+    if (!this.player) {
+      this.player = new PlayerDeVideo(cardCentral, videos[idx]);
+    }
   }
 }
